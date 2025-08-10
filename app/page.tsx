@@ -1,14 +1,12 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Space_Grotesk } from "next/font/google"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 import { Download, ImageIcon, ZoomIn, ZoomOut, RotateCcw } from "lucide-react"
 
@@ -24,28 +22,38 @@ type Template = {
   id: TemplateId
   title: string
   src: string
-  // Inner photo window anchor on a 768x768 baseline (pixels). Scaled to native size.
+  // Anchor and size defined on a 980×980 baseline, then scaled to native size.
   innerAnchorPx: { x: number; y: number }
-  // Inner size on a 768x768 baseline (pixels). Scaled to native size.
   innerSizePx: { w: number; h: number }
 }
 
-// Baseline 768 alignment and exact inner size 490x612.5
-const BASE = 768
+// You provided the exact frame metrics on the graphic:
+// - Graphic baseline: 980 × 980
+// - Photo frame: 490 × 612.5
+// - Offsets: 450 (left), 330 (top), 40 (right), 37.5 (bottom)
+// These are self-consistent: 450 + 490 + 40 = 980 and 330 + 612.5 + 37.5 = 980
+const BASE = 980
+const EXACT_FRAME = {
+  x: 450,
+  y: 330,
+  w: 490,
+  h: 612.5,
+}
+
 const TEMPLATES: Template[] = [
   {
     id: "speaking",
     title: "I am Speaking at",
     src: "/images/speaker-session-container-1.png",
-    innerAnchorPx: { x: 254, y: 130 },
-    innerSizePx: { w: 490, h: 612.5 },
+    innerAnchorPx: { x: EXACT_FRAME.x, y: EXACT_FRAME.y },
+    innerSizePx: { w: EXACT_FRAME.w, h: EXACT_FRAME.h },
   },
   {
     id: "attending",
     title: "Thrilled to be attending",
     src: "/images/speaker-session-container.png",
-    innerAnchorPx: { x: 256, y: 132 },
-    innerSizePx: { w: 490, h: 612.5 },
+    innerAnchorPx: { x: EXACT_FRAME.x, y: EXACT_FRAME.y },
+    innerSizePx: { w: EXACT_FRAME.w, h: EXACT_FRAME.h },
   },
 ]
 
@@ -75,7 +83,7 @@ function useTemplateImage(src: string) {
 }
 
 export default function Page() {
-  const [templateId, setTemplateId] = useState<TemplateId>("speaking")
+  const [templateId, setTemplateId] = useState<TemplateId>("attending")
   const template = useMemo(() => TEMPLATES.find((t) => t.id === templateId)!, [templateId])
   const templateImg = useTemplateImage(template.src)
 
@@ -91,27 +99,25 @@ export default function Page() {
     img.onload = () => {
       URL.revokeObjectURL(url)
       setUserImg(img)
-      // Auto-fit defaults
+      // Reset placement to cover-fit
       setZoom(1)
       setOffset({ x: 0, y: 0 })
     }
     img.src = url
   }
 
-  // Adjustments
-  // zoom is a multiplier applied on top of auto-fit. 1 = fit exactly to cover.
-  const [zoom, setZoom] = useState(1)
+  // User adjustments (on top of cover-fit)
+  const [zoom, setZoom] = useState(1) // 1 = cover fit
   const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
 
   // Drag-to-pan state
   const [panning, setPanning] = useState(false)
   const lastPoint = useRef<{ x: number; y: number } | null>(null)
 
-  // Reset interactions and keep app responsive when switching templates
+  // Reset interactions on template change (prevents “hang”)
   useEffect(() => {
     setPanning(false)
     lastPoint.current = null
-    // Keep the user's photo; re-fit by keeping zoom=1 and offset=0
     setZoom(1)
     setOffset({ x: 0, y: 0 })
   }, [templateId])
@@ -125,7 +131,7 @@ export default function Page() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Native template size for crisp export
+    // Use native template size for crisp export
     const W = templateImg.naturalWidth || templateImg.width
     const H = templateImg.naturalHeight || templateImg.height
     if (canvas.width !== W || canvas.height !== H) {
@@ -134,10 +140,10 @@ export default function Page() {
     }
     ctx.clearRect(0, 0, W, H)
 
-    // Draw template
+    // Draw template first
     ctx.drawImage(templateImg, 0, 0, W, H)
 
-    // Compute inner window from baseline scaling
+    // Compute inner window from 980 baseline -> native scale
     const scaleX = W / BASE
     const scaleY = H / BASE
     const inner = {
@@ -147,7 +153,7 @@ export default function Page() {
       h: Math.round(template.innerSizePx.h * scaleY),
     }
 
-    // Draw user photo
+    // Draw user photo inside the precise window
     if (userImg) {
       ctx.save()
       ctx.beginPath()
@@ -157,7 +163,7 @@ export default function Page() {
       const iw = userImg.naturalWidth || userImg.width
       const ih = userImg.naturalHeight || userImg.height
 
-      // Auto-fit base to cover the window, then apply user zoom factor
+      // Cover-fit base, then apply user zoom
       const base = Math.max(inner.w / iw, inner.h / ih)
       const scale = base * zoom
       const drawW = iw * scale
@@ -173,13 +179,12 @@ export default function Page() {
       ctx.drawImage(userImg, drawX, drawY, drawW, drawH)
       ctx.restore()
     }
-    // The template's white frame is preserved from the PNG.
   }, [template, templateImg, userImg, zoom, offset])
 
   // Pointer handlers for pan
   const onPointerDown = (e: React.PointerEvent) => {
     setPanning(true)
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
     lastPoint.current = { x: e.clientX, y: e.clientY }
   }
   const onPointerMove = (e: React.PointerEvent) => {
@@ -193,17 +198,17 @@ export default function Page() {
     setPanning(false)
     lastPoint.current = null
     try {
-      ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+      ;(e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
     } catch {
-      // ignore if not captured
+      // ignore
     }
   }
 
-  // Wheel zoom (optional)
+  // Wheel zoom (clamped so 1.0 never reveals gaps)
   const onWheelZoom = (e: React.WheelEvent) => {
     e.preventDefault()
     const delta = e.deltaY > 0 ? -0.05 : 0.05
-    setZoom((z) => clamp(Number.parseFloat((z + delta).toFixed(2)), 0.9, 3)) // allow a slight zoom-out below fit
+    setZoom((z) => clamp(Number.parseFloat((z + delta).toFixed(2)), 1, 3))
   }
 
   // Download
@@ -225,20 +230,28 @@ export default function Page() {
       style={{ fontFamily: "var(--font-space-grotesk)" }}
     >
       <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
-        <header className="mb-6 md:mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#C9F1E5]">
-            AWS Community Day — Badge Maker
-          </h1>
-          <p className="text-sm md:text-base text-[#B89AF7] mt-2">
-            Upload your photo, then adjust size and position to fit the frame perfectly.
-          </p>
+        <header className="mb-6 md:mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#C9F1E5]">
+              AWS Community Day — Badge Maker
+            </h1>
+            <p className="text-sm md:text-base text-[#B89AF7] mt-2">
+              Upload your photo, then adjust size and position to fit the frame perfectly.
+            </p>
+          </div>
+          <img
+            src="/images/acd-logo.png"
+            alt="AWS Community Day Vadodara 2025 logo"
+            className="h-10 w-auto md:h-12 shrink-0"
+            crossOrigin="anonymous"
+          />
         </header>
 
         {/* Step 1: Template */}
         <Card className="bg-[#170233] border-[#754FEE]/30 mb-6">
           <CardHeader>
             <CardTitle className="text-white">1. Choose a template</CardTitle>
-            <CardDescription className="text-[#C9F1E5]">Switch any time. Your photo stays in place.</CardDescription>
+            <CardDescription className="text-[#C9F1E5]">Switch any time. Your photo stays loaded.</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={templateId} onValueChange={(v) => setTemplateId(v as TemplateId)}>
@@ -257,18 +270,20 @@ export default function Page() {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="speaking" className="mt-4">
-                <TemplateRow
-                  title="I am Speaking at"
-                  src="/images/speaker-session-container-1.png"
-                  alt="Speaking template preview"
-                />
+                <div className="rounded-md border border-[#8E5BFF]/20 p-4 bg-[#2a0a5b]/30 text-[#C9F1E5]">
+                  <p className="text-base md:text-lg">
+                    We are excited to have you on board for AWS Community Day Vadodara!
+                  </p>
+                  <p className="text-sm md:text-base text-[#C9F1E5]/80 mt-1">This will generate a Speaking post.</p>
+                </div>
               </TabsContent>
               <TabsContent value="attending" className="mt-4">
-                <TemplateRow
-                  title="Thrilled to be attending"
-                  src="/images/speaker-session-container.png"
-                  alt="Attending template preview"
-                />
+                <div className="rounded-md border border-[#8E5BFF]/20 p-4 bg-[#2a0a5b]/30 text-[#C9F1E5]">
+                  <p className="text-base md:text-lg">
+                    We are excited to have you on board for AWS Community Day Vadodara!
+                  </p>
+                  <p className="text-sm md:text-base text-[#C9F1E5]/80 mt-1">This will generate an Attending post.</p>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -278,18 +293,18 @@ export default function Page() {
         <Card className="bg-[#170233] border-[#754FEE]/30">
           <CardHeader>
             <CardTitle className="text-white">2. Upload and adjust</CardTitle>
-            <CardDescription className="text-[#C9F1E5]">
+            <CardDescription className="text-[#CAE9EE]">
               Drag inside preview to move. Use the slider or trackpad to resize.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-5">
             <div className="flex flex-col md:flex-row items-center gap-3 rounded-lg border border-dashed border-[#8E5BFF] p-4 md:p-6 bg-[#2a0a5b]/30">
               <div className="rounded-md bg-[#8E5BFF]/20 p-2">
-                <ImageIcon className="h-5 w-5 text-[#C9F1E5]" />
+                <ImageIcon className="h-5 w-5 text-[#CAE9EE]" />
               </div>
               <div className="flex-1 text-center md:text-left">
-                <p className="text-sm">Upload a clear headshot or portrait photo</p>
-                <p className="text-xs text-[#C9F1E5]/70">PNG or JPG recommended. Larger images look crisper.</p>
+                <p className="text-sm text-[#CAE9EE]">Upload a clear headshot or portrait photo</p>
+                <p className="text-xs text-[#CAE9EE]/70">PNG or JPG recommended. Larger images look crisper.</p>
               </div>
               <div className="flex items-center gap-3">
                 <input
@@ -328,39 +343,46 @@ export default function Page() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label htmlFor="zoom" className="inline-flex items-center gap-2 text-[#C9F1E5]">
+                <Label htmlFor="zoom" className="inline-flex items-center gap-2 text-[#CAE9EE]">
                   <ZoomIn className="h-4 w-4" /> Zoom
                 </Label>
-                <div className="text-xs text-[#C9F1E5]/70">{Math.round(zoom * 100)}%</div>
+                <div className="text-xs text-[#CAE9EE]">{Math.round(zoom * 100)}%</div>
               </div>
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
                   variant="outline"
-                  className="border-[#8E5BFF]/30 text-white hover:bg-[#8E5BFF]/10 bg-transparent"
-                  onClick={() => setZoom((z) => clamp(Number.parseFloat((z - 0.05).toFixed(2)), 0.9, 3))}
+                  className="border-[#CAE9EE]/50 text-[#CAE9EE] hover:bg-[#CAE9EE]/10 bg-transparent"
+                  onClick={() => setZoom((z) => clamp(Number.parseFloat((z - 0.05).toFixed(2)), 1, 3))}
                 >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
-                <Slider
-                  min={0.9}
+
+                {/* Native range input with CAE9EE accent color */}
+                <input
+                  type="range"
+                  min={1}
                   max={3}
                   step={0.01}
-                  value={[zoom]}
-                  onValueChange={(v) => setZoom(clamp(v[0] ?? 1, 0.9, 3))}
+                  value={zoom}
+                  onChange={(e) => setZoom(clamp(Number.parseFloat(e.target.value), 1, 3))}
+                  className="w-full h-2 rounded-full bg-[#CAE9EE]/20"
+                  style={{ accentColor: "#CAE9EE" }}
+                  aria-label="Zoom"
                 />
+
                 <Button
                   type="button"
                   variant="outline"
-                  className="border-[#8E5BFF]/30 text-white hover:bg-[#8E5BFF]/10 bg-transparent"
-                  onClick={() => setZoom((z) => clamp(Number.parseFloat((z + 0.05).toFixed(2)), 0.9, 3))}
+                  className="border-[#CAE9EE]/50 text-[#CAE9EE] hover:bg-[#CAE9EE]/10 bg-transparent"
+                  onClick={() => setZoom((z) => clamp(Number.parseFloat((z + 0.05).toFixed(2)), 1, 3))}
                 >
                   <ZoomIn className="h-4 w-4" />
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
-                  className="text-[#C9F1E5]"
+                  className="text-[#CAE9EE]"
                   onClick={() => {
                     setZoom(1)
                     setOffset({ x: 0, y: 0 })
@@ -371,13 +393,9 @@ export default function Page() {
                   Fit to frame
                 </Button>
               </div>
-              <p className="text-xs text-[#C9F1E5]/70 mt-2">
-                Tip: Drag the preview to reposition. Use the slider or trackpad scroll to resize.
-              </p>
             </div>
           </CardContent>
-          <CardFooter className="flex items-center justify-between flex-col md:flex-row gap-3">
-            <div className="text-xs text-[#C9F1E5]/70">Typeface: Space Grotesk • Theme: Deep Purple + Lavender</div>
+          <CardFooter className="flex items-center justify-end gap-3">
             <Button
               type="button"
               onClick={downloadImage}
@@ -391,20 +409,6 @@ export default function Page() {
         </Card>
       </div>
     </main>
-  )
-}
-
-function TemplateRow({ title, src, alt }: { title: string; src: string; alt: string }) {
-  return (
-    <div className="grid md:grid-cols-[220px_1fr] gap-4 items-center">
-      <div className="rounded-md overflow-hidden border border-[#8E5BFF]/20 bg-[#2a0a5b]/30">
-        <img src={src || "/placeholder.svg"} alt={alt} crossOrigin="anonymous" className="block w-full h-auto" />
-      </div>
-      <div>
-        <h3 className="text-lg font-medium text-white">{title}</h3>
-        <p className="text-sm text-[#C9F1E5]/70 mt-1">Square, optimized for social sharing.</p>
-      </div>
-    </div>
   )
 }
 
