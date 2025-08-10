@@ -232,9 +232,7 @@ export default function Page() {
       <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
         <header className="mb-6 md:mb-8 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#C9F1E5]">
-              AWS Community Day — Badge Maker
-            </h1>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#C9F1E5]">ACD Badge Maker</h1>
             <p className="text-sm md:text-base text-[#B89AF7] mt-2">
               Upload your photo, then adjust size and position to fit the frame perfectly.
             </p>
@@ -251,7 +249,6 @@ export default function Page() {
         <Card className="bg-[#170233] border-[#754FEE]/30 mb-6">
           <CardHeader>
             <CardTitle className="text-white">1. Choose a template</CardTitle>
-            <CardDescription className="text-[#C9F1E5]">Switch any time. Your photo stays loaded.</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={templateId} onValueChange={(v) => setTemplateId(v as TemplateId)}>
