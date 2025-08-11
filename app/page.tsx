@@ -29,15 +29,15 @@ type Template = {
 
 // You provided the exact frame metrics on the graphic:
 // - Graphic baseline: 980 × 980
-// - Photo frame: 490 × 612.5
-// - Offsets: 450 (left), 330 (top), 40 (right), 37.5 (bottom)
-// These are self-consistent: 450 + 490 + 40 = 980 and 330 + 612.5 + 37.5 = 980
+// - Photo frame: 450 × 500
+// - Offsets: 493 (left), 443 (top)
+// These are self-consistent: 493 + 450 = 943 and 443 + 500 = 943
 const BASE = 980
 const EXACT_FRAME = {
-  x: 450,
-  y: 330,
-  w: 490,
-  h: 612.5,
+  x: 480, // Moved 5px left from 485 for better centering
+  y: 430, // Moved 5px up from 435 for better vertical alignment
+  w: 447, // Reduced by 10px from 460 to make frame smaller from right
+  h: 497, // Reduced by 10px from 510 to make frame smaller from bottom
 }
 
 const TEMPLATES: Template[] = [
