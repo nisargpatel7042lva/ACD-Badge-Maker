@@ -1,12 +1,15 @@
-import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
-import './globals.css'
+import type React from "react"
+import type { Metadata } from "next"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
+import { Analytics } from "@vercel/analytics/next"
+import { Suspense } from "react"
+import "./globals.css"
 
 export const metadata: Metadata = {
-  title: 'ACD Banner Maker',
-  description: 'ACD Banner Maker',
-  generator: 'Nisarg Patel',
+  title: "ACD Banner Maker",
+  description: "ACD Banner Maker",
+  generator: "Nisarg Patel",
 }
 
 export default function RootLayout({
@@ -25,7 +28,10 @@ html {
 }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body>
+        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+        <Analytics />
+      </body>
     </html>
   )
 }
