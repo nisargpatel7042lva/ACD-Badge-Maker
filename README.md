@@ -1,30 +1,87 @@
-# ACD Badge Maker
+# ACD Photo Cropper
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+<p align="center">
+  <img src="./public/images/AWS UG Logo.png" alt="AWS UG Logo" height="80"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="./public/images/acd-logo.png" alt="ACD Logo" height="80"/>
+</p>
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/nisargpatel7042lvas-projects/v0-space-themed-website)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/KHlJa35CXAu)
+<p align="center">
+  Create your own ACD (AWS Community Day) badge by uploading and cropping your photo, then download it instantly.
+</p>
 
-## Overview
+<p align="center">
+  🔗 <a href="https://acd-photo-cropper.vercel.app/" target="_blank">Live Demo</a>
+</p>
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+---
 
-## Deployment
+## ✨ Features
+- Upload your photo (JPG/PNG supported)  
+- Crop, drag, and zoom to fit perfectly  
+- Choose from multiple badge templates (Speaker / Attendee)  
+- Download the generated badge as PNG  
+- Privacy-friendly (everything runs in your browser)  
+- Fully responsive across devices  
 
-Your project is live at:
+---
 
-**[https://vercel.com/nisargpatel7042lvas-projects/v0-space-themed-website](https://vercel.com/nisargpatel7042lvas-projects/v0-space-themed-website)**
+## 🛠️ Tech Stack
+- **Framework**: Next.js  
+- **Styling**: Tailwind CSS  
+- **Image Processing**: HTML5 Canvas  
+- **Deployment**: Vercel  
 
-## Build your app
+---
 
-Continue building your app on:
+## 🚀 Installation & Setup
 
-**[https://v0.dev/chat/projects/KHlJa35CXAu](https://v0.dev/chat/projects/KHlJa35CXAu)**
+Clone the repository:
 
-## How It Works
+```bash
+git clone https://github.com/your-username/ACD-Badge-Maker.git
+cd ACD-Badge-Maker
+```
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+App will be running at:
+http://localhost:3000
+
+
+📖 Usage
+
+1. Open the live app
+2. Select a badge template.
+3. Upload your photo.
+4. Adjust position and scale.
+5. Download your badge.
+
+
+## Sample Generated Badge
+
+Here’s an example created with the tool:
+
+<img src="./public/images/Demo_img.jpg" alt="Sample Badge" width="400"/>
+
+## 📜 License
+
+This project is licensed under the MIT License.
+
+👨‍💻 Author
+Nisarg Patel
+
+Portfolio: https://nisargxplores-portfolio.vercel.app/
+
+Twitter: https://x.com/Nisargpatel5563
+
+LinkedIn: https://www.linkedin.com/in/nisarg-patel-7b799a277/
